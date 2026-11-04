@@ -45,7 +45,7 @@ FFP/
 ## Setup
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/SeanMichals/PPRFantasyTool.git
 cd FFP
 python3 -m venv venv
 source venv/bin/activate
