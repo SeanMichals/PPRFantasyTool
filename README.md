@@ -1,4 +1,4 @@
-# PPRFantasyTool
+# PPR Fantasy Tool
 
 A machine learning project that predicts a running back's PPR fantasy points for the next game, using historical NFL data. The goal is to beat a simple "average of the last 3 games" baseline.
 
