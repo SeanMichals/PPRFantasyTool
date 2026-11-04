@@ -1,0 +1,5 @@
+nflreadpy
+pandas
+scikit-learn
+pyarrow
+streamlit
