@@ -37,18 +37,20 @@ df = df.merge(allowed[["opponent_team", "season", "week", "opp_rb_allowed"]],
               on=["opponent_team", "season", "week"], how="left")
 opp = ["opp_rb_allowed"]
 
-# 2. Home/away from the schedule
-sched = nfl.load_schedules(seasons=seasons).to_pandas()[["game_id", "home_team"]]
-df = df.merge(sched, on="game_id", how="left")
-df["is_home"] = (df["team"] == df["home_team"]).astype(float)
-df.loc[df["home_team"].isna(), "is_home"] = float("nan")
-home = ["is_home"]
 
-# 3. Efficiency: rolling EPA and 20+ yard runs
+# 2. Efficiency: rolling EPA and 20+ yard runs
 eff = add_rolling(df, ["rushing_epa", "rushing_20", "rushing_first_downs"])
 
-# 4. Week of season (captures early/late season patterns)
-wk = ["week"]
+
+# 3. Vegas lines: implied team total and spread from the team's perspective
+sched_full = nfl.load_schedules(seasons=seasons).to_pandas()[
+    ["game_id", "home_team", "spread_line", "total_line"]]
+df = df.merge(sched_full, on="game_id", how="left")
+is_home = df["team"] == df["home_team"]
+# spread_line is from the home team's view (positive = home favored)
+df["team_spread"] = df["spread_line"].where(is_home, -df["spread_line"])
+df["implied_total"] = (df["total_line"] + df["team_spread"]) / 2
+vegas = ["team_spread", "implied_total"]
 
 # Keep the exact same rows for every experiment so the scores are comparable
 df = df.dropna(subset=base).reset_index(drop=True)
@@ -72,10 +74,9 @@ print(f"Baseline (last 3 avg): {sum(b)/len(b):.3f}")
 experiments = {
     "base rolling stats": base,
     "+ opponent defense": base + opp,
-    "+ home/away":        base + home,
-    "+ efficiency":       base + eff,
-    "+ week of season":   base + wk,
-    "all combined":       base + opp + home + eff + wk,
+    "+ efficiency": base + eff,
+    "+ vegas lines": base + vegas,
+    "all combined": base + opp + eff + vegas,
 }
 for name, feats in experiments.items():
     print(f"{name:22s} MAE: {evaluate(feats):.3f}")
